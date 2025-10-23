@@ -4,25 +4,15 @@ package MainFolder.modelos;
 import java.sql.Timestamp;
 
 public class Material {
-    private int id;
-    private String codigo;
-    private String titulo;
-    private String tipo; // 'libro', 'revista', 'cd_audio', 'dvd'
-    private int unidadesDisponibles;
-    private Timestamp fechaRegistro;
+    protected int id;
+    protected String codigo;
+    protected String titulo;
+    protected String tipo;
+    protected int unidadesDisponibles;
+    protected Timestamp fechaRegistro;
 
     // Constructor vacío
     public Material() {}
-
-    // Constructor completo
-    public Material(int id, String codigo, String titulo, String tipo, int unidadesDisponibles, Timestamp fechaRegistro) {
-        this.id = id;
-        this.codigo = codigo;
-        this.titulo = titulo;
-        this.tipo = tipo;
-        this.unidadesDisponibles = unidadesDisponibles;
-        this.fechaRegistro = fechaRegistro;
-    }
 
     // Getters y Setters
     public int getId() { return id; }
@@ -42,16 +32,4 @@ public class Material {
 
     public Timestamp getFechaRegistro() { return fechaRegistro; }
     public void setFechaRegistro(Timestamp fechaRegistro) { this.fechaRegistro = fechaRegistro; }
-
-    @Override
-    public String toString() {
-        return "Material{" +
-                "id=" + id +
-                ", codigo='" + codigo + '\'' +
-                ", titulo='" + titulo + '\'' +
-                ", tipo='" + tipo + '\'' +
-                ", unidadesDisponibles=" + unidadesDisponibles +
-                ", fechaRegistro=" + fechaRegistro +
-                '}';
-    }
 }

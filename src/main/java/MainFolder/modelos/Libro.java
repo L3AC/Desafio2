@@ -10,9 +10,14 @@ public class Libro extends MaterialEscrito {
 
     public Libro() {}
 
-    public Libro(String codigo, String titulo, int unidadesDisponibles,
+    // Constructor completo (opcional, pero útil)
+    public Libro(int id, String codigo, String titulo, int unidadesDisponibles,
                  String autor, int numPaginas, String editorial, String isbn, int añoPublicacion) {
-        super(codigo, titulo, "libro", unidadesDisponibles);
+        this.id = id;
+        this.codigo = codigo;
+        this.titulo = titulo;
+        this.tipo = "libro";
+        this.unidadesDisponibles = unidadesDisponibles;
         this.autor = autor;
         this.numPaginas = numPaginas;
         this.editorial = editorial;
@@ -35,15 +40,4 @@ public class Libro extends MaterialEscrito {
 
     public int getAñoPublicacion() { return añoPublicacion; }
     public void setAñoPublicacion(int añoPublicacion) { this.añoPublicacion = añoPublicacion; }
-
-    @Override
-    public String toString() {
-        return "Libro{" +
-                "autor='" + autor + '\'' +
-                ", numPaginas=" + numPaginas +
-                ", editorial='" + editorial + '\'' +
-                ", isbn='" + isbn + '\'' +
-                ", añoPublicacion=" + añoPublicacion +
-                "} " + super.toString();
-    }
 }
