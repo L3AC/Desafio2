@@ -10,13 +10,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MaterialObjeto {
+
     private static final Logger logger = LogManager.getLogger(MaterialObjeto.class);
 
     // === AGREGAR ===
     public boolean agregarMaterial(Material material) {
         String sqlMaterial = "INSERT INTO material (codigo, titulo, tipo, unidades_disponibles) VALUES (?, ?, ?, ?)";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sqlMaterial, Statement.RETURN_GENERATED_KEYS)) {
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sqlMaterial, Statement.RETURN_GENERATED_KEYS)) {
 
             ps.setString(1, material.getCodigo());
             ps.setString(2, material.getTitulo());
@@ -90,13 +90,79 @@ public class MaterialObjeto {
         }
     }
 
+    public boolean modificarMaterial(Material material) {
+        String sqlMaterial = "UPDATE material SET codigo = ?, titulo = ?, unidades_disponibles = ? WHERE id = ?";
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sqlMaterial)) {
+
+            ps.setString(1, material.getCodigo());
+            ps.setString(2, material.getTitulo());
+            ps.setInt(3, material.getUnidadesDisponibles());
+            ps.setInt(4, material.getId());
+            ps.executeUpdate();
+
+            // Actualizar tabla específica
+            switch (material.getTipo()) {
+                case "libro" -> {
+                    Libro l = (Libro) material;
+                    String sql = "UPDATE libro SET autor = ?, num_paginas = ?, editorial = ?, isbn = ?, año_publicacion = ? WHERE id_material = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(sql)) {
+                        ps2.setString(1, l.getAutor());
+                        ps2.setInt(2, l.getNumPaginas());
+                        ps2.setString(3, l.getEditorial());
+                        ps2.setString(4, l.getIsbn());
+                        ps2.setInt(5, l.getAñoPublicacion());
+                        ps2.setInt(6, l.getId());
+                        ps2.executeUpdate();
+                    }
+                }
+                case "revista" -> {
+                    Revista r = (Revista) material;
+                    String sql = "UPDATE revista SET editorial = ?, periodicidad = ?, fecha_publicacion = ? WHERE id_material = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(sql)) {
+                        ps2.setString(1, r.getEditorial());
+                        ps2.setString(2, r.getPeriodicidad());
+                        ps2.setDate(3, r.getFechaPublicacion());
+                        ps2.setInt(4, r.getId());
+                        ps2.executeUpdate();
+                    }
+                }
+                case "cd_audio" -> {
+                    CDAudio cd = (CDAudio) material;
+                    String sql = "UPDATE cd_audio SET artista = ?, genero = ?, duracion = ?, num_canciones = ? WHERE id_material = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(sql)) {
+                        ps2.setString(1, cd.getArtista());
+                        ps2.setString(2, cd.getGenero());
+                        ps2.setTime(3, cd.getDuracion());
+                        ps2.setInt(4, cd.getNumCanciones());
+                        ps2.setInt(5, cd.getId());
+                        ps2.executeUpdate();
+                    }
+                }
+                case "dvd" -> {
+                    DVD d = (DVD) material;
+                    String sql = "UPDATE dvd SET director = ?, duracion = ?, genero = ? WHERE id_material = ?";
+                    try (PreparedStatement ps2 = conn.prepareStatement(sql)) {
+                        ps2.setString(1, d.getDirector());
+                        ps2.setTime(2, d.getDuracion());
+                        ps2.setString(3, d.getGenero());
+                        ps2.setInt(4, d.getId());
+                        ps2.executeUpdate();
+                    }
+                }
+            }
+            return true;
+
+        } catch (SQLException e) {
+            logger.error("Error al modificar material con ID: " + material.getId(), e);
+            return false;
+        }
+    }
+
     // === LISTAR ===
     public List<Material> listarMateriales() {
         List<Material> lista = new ArrayList<>();
-        String sql = "SELECT * FROM material ORDER BY id";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        String sql = "SELECT id,codigo,titulo,unidades_disponibles,fecha_registro FROM material ORDER BY id";
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -107,13 +173,20 @@ public class MaterialObjeto {
                 Timestamp fecha = rs.getTimestamp("fecha_registro");
 
                 Material material = switch (tipo) {
-                    case "libro" -> obtenerLibro(conn, id, codigo, titulo, unidades, fecha);
-                    case "revista" -> obtenerRevista(conn, id, codigo, titulo, unidades, fecha);
-                    case "cd_audio" -> obtenerCDAudio(conn, id, codigo, titulo, unidades, fecha);
-                    case "dvd" -> obtenerDVD(conn, id, codigo, titulo, unidades, fecha);
-                    default -> null;
+                    case "libro" ->
+                        obtenerLibro(conn, id, codigo, titulo, unidades, fecha);
+                    case "revista" ->
+                        obtenerRevista(conn, id, codigo, titulo, unidades, fecha);
+                    case "cd_audio" ->
+                        obtenerCDAudio(conn, id, codigo, titulo, unidades, fecha);
+                    case "dvd" ->
+                        obtenerDVD(conn, id, codigo, titulo, unidades, fecha);
+                    default ->
+                        null;
                 };
-                if (material != null) lista.add(material);
+                if (material != null) {
+                    lista.add(material);
+                }
             }
         } catch (SQLException e) {
             logger.error("Error al listar materiales", e);
@@ -123,18 +196,18 @@ public class MaterialObjeto {
 
     // === MÉTODOS PRIVADOS PARA OBTENER DETALLES ===
     private Libro obtenerLibro(Connection conn, int id, String codigo, String titulo, int unidades, Timestamp fecha) {
-        String sql = "SELECT * FROM libro WHERE id_material = ?";
+        String sql = "SELECT autor,num_paginas,editorial,isbn,año_publicacion FROM libro WHERE id_material = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new Libro(
-                    id, codigo, titulo, unidades,
-                    rs.getString("autor"),
-                    rs.getInt("num_paginas"),
-                    rs.getString("editorial"),
-                    rs.getString("isbn"),
-                    rs.getInt("año_publicacion")
+                        id, codigo, titulo, unidades,
+                        rs.getString("autor"),
+                        rs.getInt("num_paginas"),
+                        rs.getString("editorial"),
+                        rs.getString("isbn"),
+                        rs.getInt("año_publicacion")
                 );
             }
         } catch (SQLException e) {
@@ -150,10 +223,10 @@ public class MaterialObjeto {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new Revista(
-                    id, codigo, titulo, unidades,
-                    rs.getString("editorial"),
-                    rs.getString("periodicidad"),
-                    rs.getDate("fecha_publicacion")
+                        id, codigo, titulo, unidades,
+                        rs.getString("editorial"),
+                        rs.getString("periodicidad"),
+                        rs.getDate("fecha_publicacion")
                 );
             }
         } catch (SQLException e) {
@@ -169,11 +242,11 @@ public class MaterialObjeto {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new CDAudio(
-                    id, codigo, titulo, unidades,
-                    rs.getString("artista"),
-                    rs.getString("genero"),
-                    rs.getTime("duracion"),
-                    rs.getInt("num_canciones")
+                        id, codigo, titulo, unidades,
+                        rs.getString("artista"),
+                        rs.getString("genero"),
+                        rs.getTime("duracion"),
+                        rs.getInt("num_canciones")
                 );
             }
         } catch (SQLException e) {
@@ -189,10 +262,10 @@ public class MaterialObjeto {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return new DVD(
-                    id, codigo, titulo, unidades,
-                    rs.getString("director"),
-                    rs.getTime("duracion"),
-                    rs.getString("genero")
+                        id, codigo, titulo, unidades,
+                        rs.getString("director"),
+                        rs.getTime("duracion"),
+                        rs.getString("genero")
                 );
             }
         } catch (SQLException e) {
@@ -204,8 +277,7 @@ public class MaterialObjeto {
     // === ELIMINAR ===
     public boolean eliminarMaterial(int id) {
         String sql = "DELETE FROM material WHERE id = ?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -217,8 +289,7 @@ public class MaterialObjeto {
     // === BUSCAR POR CÓDIGO (opcional, útil para modificar) ===
     public Material buscarPorCodigo(String codigo) {
         String sql = "SELECT * FROM material WHERE codigo = ?";
-        try (Connection conn = ConexionDB.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, codigo);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
@@ -229,11 +300,16 @@ public class MaterialObjeto {
                 Timestamp fecha = rs.getTimestamp("fecha_registro");
 
                 return switch (tipo) {
-                    case "libro" -> obtenerLibro(conn, id, codigo, titulo, unidades, fecha);
-                    case "revista" -> obtenerRevista(conn, id, codigo, titulo, unidades, fecha);
-                    case "cd_audio" -> obtenerCDAudio(conn, id, codigo, titulo, unidades, fecha);
-                    case "dvd" -> obtenerDVD(conn, id, codigo, titulo, unidades, fecha);
-                    default -> null;
+                    case "libro" ->
+                        obtenerLibro(conn, id, codigo, titulo, unidades, fecha);
+                    case "revista" ->
+                        obtenerRevista(conn, id, codigo, titulo, unidades, fecha);
+                    case "cd_audio" ->
+                        obtenerCDAudio(conn, id, codigo, titulo, unidades, fecha);
+                    case "dvd" ->
+                        obtenerDVD(conn, id, codigo, titulo, unidades, fecha);
+                    default ->
+                        null;
                 };
             }
         } catch (SQLException e) {
