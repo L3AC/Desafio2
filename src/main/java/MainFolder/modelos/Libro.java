@@ -1,6 +1,8 @@
 
 package MainFolder.modelos;
 
+import java.sql.Timestamp;
+
 public class Libro extends MaterialEscrito {
     private String autor;
     private int numPaginas;
@@ -40,4 +42,5 @@ public class Libro extends MaterialEscrito {
 
     public int getAñoPublicacion() { return añoPublicacion; }
     public void setAñoPublicacion(int añoPublicacion) { this.añoPublicacion = añoPublicacion; }
+
 }

@@ -10,6 +10,7 @@ public class Material {
     protected String tipo;
     protected int unidadesDisponibles;
     protected Timestamp fechaRegistro;
+   
 
     // Constructor vacío
     public Material() {}
@@ -30,6 +31,7 @@ public class Material {
     public int getUnidadesDisponibles() { return unidadesDisponibles; }
     public void setUnidadesDisponibles(int unidadesDisponibles) { this.unidadesDisponibles = unidadesDisponibles; }
 
-    public Timestamp getFechaRegistro() { return fechaRegistro; }
+    public Timestamp getFechaRegistro() { 
+        return fechaRegistro; }
     public void setFechaRegistro(Timestamp fechaRegistro) { this.fechaRegistro = fechaRegistro; }
 }

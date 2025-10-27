@@ -15,25 +15,61 @@ public class MaterialObjeto {
 
     // === AGREGAR ===
     public boolean agregarMaterial(Material material) {
-        String sqlMaterial = "INSERT INTO material (codigo, titulo, tipo, unidades_disponibles) VALUES (?, ?, ?, ?)";
-        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sqlMaterial, Statement.RETURN_GENERATED_KEYS)) {
+        String tipo = material.getTipo().toLowerCase();
+        String prefijo = switch (tipo) {
+            case "libro" ->"LIB";
+            case "revista" ->"REV";
+            case "cd_audio" ->"CDA";
+            case "dvd" ->"DVD";
+            default -> "";
+        };
 
-            ps.setString(1, material.getCodigo());
-            ps.setString(2, material.getTitulo());
-            ps.setString(3, material.getTipo());
-            ps.setInt(4, material.getUnidadesDisponibles());
-            ps.executeUpdate();
+        String sqlGenerarCodigo = """
+        SELECT CONCAT(?, LPAD(COALESCE(MAX(CAST(SUBSTRING(codigo, ?) AS UNSIGNED)), 0) + 1, 5, '0')) AS nuevo_codigo
+        FROM material
+        WHERE tipo = ? """;
 
-            try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) {
-                    int id = rs.getInt(1);
-                    material.setId(id);
-                    insertarDetalle(material, conn);
-                    return true;
+        String sqlInsertar = "INSERT INTO material (codigo, titulo, tipo, unidades_disponibles) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = ConexionDB.getConnection()) {
+            // Generar nuevo código
+            String nuevoCodigo;
+            try (PreparedStatement psGen = conn.prepareStatement(sqlGenerarCodigo)) {
+                psGen.setString(1, prefijo);
+                psGen.setInt(2, prefijo.length() + 1); // SUBSTRING en MySQL es 1-based
+                psGen.setString(3, material.getTipo());
+
+                try (ResultSet rs = psGen.executeQuery()) {
+                    if (rs.next()) {
+                        nuevoCodigo = rs.getString("nuevo_codigo");
+                    } else {
+                        // fallback muy improbable, pero seguro
+                        nuevoCodigo = prefijo + "00001";
+                    }
                 }
             }
+
+            material.setCodigo(nuevoCodigo);
+            // Insertar
+            try (PreparedStatement psIns = conn.prepareStatement(sqlInsertar, Statement.RETURN_GENERATED_KEYS)) {
+                psIns.setString(1, material.getCodigo());
+                psIns.setString(2, material.getTitulo());
+                psIns.setString(3, material.getTipo());
+                psIns.setInt(4, material.getUnidadesDisponibles());
+
+                if (psIns.executeUpdate() > 0) {
+                    try (ResultSet rs = psIns.getGeneratedKeys()) {
+                        if (rs.next()) {
+                            material.setId(rs.getInt(1));
+                            insertarDetalle(material, conn);
+                            return true;
+                        }
+                    }
+                }
+            }
+
         } catch (SQLException e) {
-            logger.error("Error al agregar material: " + material.getCodigo(), e);
+            logger.error("Error al agregar material: " + material.getTipo(), e);
         }
         return false;
     }
@@ -91,13 +127,12 @@ public class MaterialObjeto {
     }
 
     public boolean modificarMaterial(Material material) {
-        String sqlMaterial = "UPDATE material SET codigo = ?, titulo = ?, unidades_disponibles = ? WHERE id = ?";
+        String sqlMaterial = "UPDATE material SET  titulo = ?, unidades_disponibles = ? WHERE id = ?";
         try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sqlMaterial)) {
 
-            ps.setString(1, material.getCodigo());
-            ps.setString(2, material.getTitulo());
-            ps.setInt(3, material.getUnidadesDisponibles());
-            ps.setInt(4, material.getId());
+            ps.setString(1, material.getTitulo());
+            ps.setInt(2, material.getUnidadesDisponibles());
+            ps.setInt(3, material.getId());
             ps.executeUpdate();
 
             // Actualizar tabla específica
@@ -161,7 +196,7 @@ public class MaterialObjeto {
     // === LISTAR ===
     public List<Material> listarMateriales() {
         List<Material> lista = new ArrayList<>();
-        String sql = "SELECT id,codigo,titulo,unidades_disponibles,fecha_registro FROM material ORDER BY id";
+        String sql = "SELECT id,codigo,titulo,unidades_disponibles,tipo,fecha_registro FROM material ORDER BY id";
         try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -316,5 +351,17 @@ public class MaterialObjeto {
             logger.error("Error al buscar material por código: " + codigo, e);
         }
         return null;
+    }
+
+    public boolean existeCodigo(String codigo) {
+        String sql = "SELECT 1 FROM material WHERE codigo = ?";
+        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, codigo);
+            ResultSet rs = ps.executeQuery();
+            return rs.next(); // true si hay al menos una fila, false si no
+        } catch (SQLException e) {
+            logger.error("Error al verificar existencia del código: " + codigo, e);
+            return false;
+        }
     }
 }
