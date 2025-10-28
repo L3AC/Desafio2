@@ -352,16 +352,4 @@ public class MaterialObjeto {
         }
         return null;
     }
-
-    public boolean existeCodigo(String codigo) {
-        String sql = "SELECT 1 FROM material WHERE codigo = ?";
-        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, codigo);
-            ResultSet rs = ps.executeQuery();
-            return rs.next(); // true si hay al menos una fila, false si no
-        } catch (SQLException e) {
-            logger.error("Error al verificar existencia del código: " + codigo, e);
-            return false;
-        }
-    }
 }
