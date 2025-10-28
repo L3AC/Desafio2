@@ -321,35 +321,4 @@ public class MaterialObjeto {
         }
     }
 
-    // === BUSCAR POR CÓDIGO (opcional, útil para modificar) ===
-    public Material buscarPorCodigo(String codigo) {
-        String sql = "SELECT * FROM material WHERE codigo = ?";
-        try (Connection conn = ConexionDB.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, codigo);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                int id = rs.getInt("id");
-                String titulo = rs.getString("titulo");
-                String tipo = rs.getString("tipo");
-                int unidades = rs.getInt("unidades_disponibles");
-                Timestamp fecha = rs.getTimestamp("fecha_registro");
-
-                return switch (tipo) {
-                    case "libro" ->
-                        obtenerLibro(conn, id, codigo, titulo, unidades, fecha);
-                    case "revista" ->
-                        obtenerRevista(conn, id, codigo, titulo, unidades, fecha);
-                    case "cd_audio" ->
-                        obtenerCDAudio(conn, id, codigo, titulo, unidades, fecha);
-                    case "dvd" ->
-                        obtenerDVD(conn, id, codigo, titulo, unidades, fecha);
-                    default ->
-                        null;
-                };
-            }
-        } catch (SQLException e) {
-            logger.error("Error al buscar material por código: " + codigo, e);
-        }
-        return null;
-    }
 }
