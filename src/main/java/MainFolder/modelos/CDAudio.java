@@ -2,7 +2,7 @@
 package MainFolder.modelos;
 import java.sql.Time;
 
-public class CDAudio extends MaterialAudioVisual {
+public class CDAudio extends Material {
     private String artista;
     private String genero;
     private Time duracion;

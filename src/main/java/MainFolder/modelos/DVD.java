@@ -3,7 +3,7 @@ package MainFolder.modelos;
 
 import java.sql.Time;
 
-public class DVD extends MaterialAudioVisual {
+public class DVD extends Material {
     private String director;
     private Time duracion;
     private String genero;

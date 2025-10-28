@@ -2,7 +2,7 @@
 package MainFolder.modelos;
 import java.sql.Date;
 
-public class Revista extends MaterialEscrito {
+public class Revista extends Material {
     private String editorial;
     private String periodicidad;
     private Date fechaPublicacion;

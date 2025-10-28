@@ -3,7 +3,7 @@ package MainFolder.modelos;
 
 import java.sql.Timestamp;
 
-public class Libro extends MaterialEscrito {
+public class Libro extends Material {
     private String autor;
     private int numPaginas;
     private String editorial;
