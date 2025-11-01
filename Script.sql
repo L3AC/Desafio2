@@ -19,7 +19,7 @@ CREATE TABLE libro (
     num_paginas INT NOT NULL CHECK (num_paginas > 0),
     editorial VARCHAR(255),
     isbn VARCHAR(20),
-    año_publicacion YEAR,
+    año_publicacion SMALLINT,
     FOREIGN KEY (id_material) REFERENCES material(id) ON DELETE CASCADE
 );
 
