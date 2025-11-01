@@ -36,6 +36,7 @@ public class CrudLibro extends javax.swing.JFrame {
         Validacion.permitirSolo(txtTitulo, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZáéíóúÁÉÍÓÚñÑ0123456789 ", 255);
         Validacion.permitirSoloFecha(txtFecha, "0123456789");
         txtFecha.setEndYear(actualYear);
+        txtFecha.setStartYear(-10000);
         Validacion.permitirSolo(txtISBN, "-0123456789", 20);
         TableColumnModel tcm = tabla.getColumnModel();
 
@@ -102,7 +103,7 @@ public class CrudLibro extends javax.swing.JFrame {
             return false;
         }
 
-        if (txtFecha.getYear() > actualYear || txtFecha.getYear() < 0) {
+        if (txtFecha.getYear() > actualYear) {
             JOptionPane.showMessageDialog(this, "El año debe ser un número válido o menor que el actual.");
             return false;
         }
